@@ -56,7 +56,7 @@ module.exports = async (req, res) => {
       const tool = {
         name: String(name).slice(0, 80),
         url: String(url).slice(0, 500),
-        icon: String(icon || autoIcon(name)).slice(0, 300),
+        icon: String(icon || autoIconLabel(name)).slice(0, 300),
         description: String(description || "").slice(0, 200),
         category: String(category || "Khác").slice(0, 40),
         createdAt: Date.now(),
@@ -96,7 +96,7 @@ module.exports = async (req, res) => {
         url: url !== undefined ? String(url).slice(0, 500) : existing.url,
         icon:
           icon !== undefined
-            ? String(icon || autoIcon(name !== undefined ? name : existing.name)).slice(0, 300)
+            ? String(icon || autoIconLabel(name !== undefined ? name : existing.name)).slice(0, 300)
             : existing.icon,
         description: description !== undefined ? String(description).slice(0, 200) : existing.description,
         category: category !== undefined ? String(category).slice(0, 40) : existing.category,
@@ -136,38 +136,48 @@ function checkPassword(pw) {
   return typeof pw === "string" && pw === expected;
 }
 
-// Picks an emoji based on keywords found in the tool name. Falls back to a
-// generic toolbox icon if nothing matches — never leaves the icon blank.
-const ICON_RULES = [
-  { icon: "📇", kws: ["flashcard", "flash card", "vocab", "học từ", "từ vựng", "hoc tap", "học tập", "study", "quiz", "flash-card"] },
-  { icon: "✍️", kws: ["ký", "signature", "sign", "chữ ký"] },
-  { icon: "🪺", kws: ["yến", "nest", "bird"] },
-  { icon: "📊", kws: ["chart", "dashboard", "báo cáo", "report", "biểu đồ", "thống kê", "analytics", "xu burn"] },
-  { icon: "📈", kws: ["sheet", "excel", "bảng tính", "spreadsheet"] },
-  { icon: "🎮", kws: ["game", "trò chơi", "câu cá", "bắt bò"] },
-  { icon: "📝", kws: ["blog", "viết", "write", "bài viết", "post", "note", "ghi chú"] },
-  { icon: "🖼️", kws: ["photo", "ảnh", "image", "picture", "hình"] },
-  { icon: "🎬", kws: ["video", "clip", "phim"] },
-  { icon: "🎵", kws: ["music", "nhạc", "audio", "sound", "âm thanh"] },
-  { icon: "💻", kws: ["code", "dev", "script", "api", "lập trình"] },
-  { icon: "📅", kws: ["calendar", "lịch", "schedule"] },
-  { icon: "✉️", kws: ["mail", "email", "thư"] },
-  { icon: "💬", kws: ["chat", "tin nhắn", "message"] },
-  { icon: "🔒", kws: ["security", "lock", "bảo mật", "mật khẩu", "password"] },
-  { icon: "☁️", kws: ["cloud", "storage", "lưu trữ", "drive"] },
-  { icon: "💰", kws: ["shop", "mua", "sale", "bán", "cart", "giá", "profit", "lợi nhuận", "tiền", "money", "finance", "tài chính"] },
-  { icon: "🔍", kws: ["search", "tìm kiếm"] },
-  { icon: "📷", kws: ["camera", "chụp"] },
-  { icon: "🗺️", kws: ["map", "bản đồ", "location", "địa điểm"] },
-  { icon: "🔳", kws: ["qr"] },
-  { icon: "📄", kws: ["cv", "resume", "hồ sơ"] },
-  { icon: "🔁", kws: ["convert", "đổi", "chuyển đổi"] },
+// Short text label used for the auto-generated avatar when no icon/image is
+// given. Vietnamese domain terms get a recognizable English short tag;
+// everything else falls back to the tool's own name (or its initials).
+const LABEL_RULES = [
+  { label: "Esign", kws: ["chữ ký", "chữ ký số", "signature", "e-sign", "esign"] },
+  { label: "Nest", kws: ["yến sào", "yến", "bird nest"] },
+  { label: "Chart", kws: ["dashboard", "báo cáo", "biểu đồ", "thống kê", "xu burn"] },
+  { label: "Sheet", kws: ["bảng tính", "spreadsheet"] },
+  { label: "Game", kws: ["trò chơi", "câu cá", "bắt bò"] },
+  { label: "Note", kws: ["bài viết", "ghi chú"] },
+  { label: "Photo", kws: ["hình ảnh", "photo"] },
+  { label: "Video", kws: ["video", "clip", "phim"] },
+  { label: "Music", kws: ["âm nhạc", "music"] },
+  { label: "Calendar", kws: ["lịch trình", "calendar", "schedule"] },
+  { label: "Mail", kws: ["email", "thư điện tử"] },
+  { label: "Chat", kws: ["tin nhắn", "message"] },
+  { label: "Lock", kws: ["bảo mật", "mật khẩu", "password", "security"] },
+  { label: "Cloud", kws: ["lưu trữ", "cloud", "drive"] },
+  { label: "Money", kws: ["lợi nhuận", "tài chính", "finance"] },
+  { label: "Search", kws: ["tìm kiếm", "search"] },
+  { label: "Camera", kws: ["chụp ảnh", "camera"] },
+  { label: "Map", kws: ["bản đồ", "location"] },
+  { label: "QR", kws: ["mã qr", "qr code"] },
+  { label: "CV", kws: ["hồ sơ", "resume"] },
+  { label: "Convert", kws: ["chuyển đổi", "convert"] },
 ];
 
-function autoIcon(name) {
-  const text = String(name || "").toLowerCase();
-  const hit = ICON_RULES.find((rule) => rule.kws.some((kw) => text.includes(kw)));
-  return hit ? hit.icon : "🧩";
+function autoIconLabel(name) {
+  const raw = String(name || "").trim();
+  if (!raw) return "?";
+
+  const text = raw.toLowerCase();
+  const hit = LABEL_RULES.find((rule) => rule.kws.some((kw) => text.includes(kw)));
+  if (hit) return hit.label;
+
+  if (raw.length <= 10) return raw;
+
+  const words = raw.split(/\s+/).filter(Boolean);
+  if (words.length > 1) {
+    return words.map((w) => w[0]).join("").slice(0, 3).toUpperCase();
+  }
+  return raw.slice(0, 10);
 }
 
 function safeParse(value) {
