@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LP · Toolkit</title>
+<meta name="description" content="Bộ công cụ cá nhân — mọi tool ở một nơi." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2226%22 fill=%22%23151620%22/><text x=%2250%22 y=%2264%22 font-family=%22sans-serif%22 font-weight=%22700%22 font-size=%2244%22 fill=%22%23D6432E%22 text-anchor=%22middle%22>LP</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true">LP</span>
+    <span class="brand-text">Toolkit</span>
+  </div>
+  <button class="theme-toggle" id="themeToggle" type="button" aria-label="Đổi giao diện sáng/tối">
+    <span id="themeIcon">☾</span>
+  </button>
+</header>
+
+<main>
+  <section class="hero">
+    <p class="eyebrow">/ bộ công cụ cá nhân</p>
+    <h1>Mọi tool.<br>Một chỗ.<br><span class="accent">Một cú click.</span></h1>
+    <p class="hero-sub">Gõ để lọc, hoặc chọn theo nhóm bên dưới.</p>
+
+    <div class="command-bar">
+      <span class="prompt">/</span>
+      <input
+        id="searchInput"
+        type="text"
+        placeholder="tìm tool… (vd: yến, flashcard, ký)"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <span class="hint" id="resultCount"></span>
+    </div>
+
+    <div class="chips" id="categoryChips"></div>
+  </section>
+
+  <section class="grid" id="toolGrid"></section>
+
+  <p class="empty-state" id="emptyState" hidden>
+    Không tìm thấy tool nào khớp — thử từ khoá khác, hoặc
+    <button type="button" id="clearFilters">bỏ lọc</button>.
+  </p>
+</main>
+
+<footer>
+  <span>LP Toolkit — cập nhật bằng cách sửa <code>tools-config.js</code></span>
+</footer>
+
+<script src="tools-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
