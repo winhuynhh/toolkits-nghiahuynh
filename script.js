@@ -102,26 +102,28 @@
     grid.innerHTML = filtered
       .map(
         (t, i) => `
-        <div class="card" style="animation-delay:${i * 30}ms">
-          <a class="card-link" href="${escapeAttr(t.url)}" target="_blank" rel="noopener noreferrer" style="position:absolute;inset:0;z-index:1;" aria-label="Mở ${escapeAttr(t.name)}"></a>
-          <div class="card-top">
-            <div class="card-icon">${iconMarkup(t.icon)}</div>
-            <div class="card-actions">
-              <button class="card-delete" data-id="${escapeAttr(t.id)}" type="button" title="Xoá tool" aria-label="Xoá ${escapeAttr(t.name)}">✕</button>
-              <span class="card-arrow">↗</span>
+        <div class="row-card" style="animation-delay:${i * 25}ms">
+          <a class="row-link" href="${escapeAttr(t.url)}" target="_blank" rel="noopener noreferrer" aria-label="Mở ${escapeAttr(t.name)}"></a>
+          <div class="row-icon">${iconMarkup(t.icon)}</div>
+          <div class="row-content">
+            <div class="row-head">
+              <h3 class="row-name">${escapeHtml(t.name)}</h3>
+              <div class="row-actions">
+                <button class="row-delete" data-id="${escapeAttr(t.id)}" type="button" title="Xoá tool" aria-label="Xoá ${escapeAttr(t.name)}">✕</button>
+                <span class="row-arrow">→</span>
+              </div>
             </div>
-          </div>
-          <h3 class="card-name">${escapeHtml(t.name)}</h3>
-          <p class="card-desc">${escapeHtml(t.description || "")}</p>
-          <div class="card-domain">
-            <span>${escapeHtml(domainOf(t))}</span>
-            <span class="card-category">${escapeHtml(t.category || "Khác")}</span>
+            <p class="row-desc">${escapeHtml(t.description || "")}</p>
+            <div class="row-meta">
+              <span class="row-domain">${escapeHtml(domainOf(t))}</span>
+              <span class="row-category">${escapeHtml(t.category || "Khác")}</span>
+            </div>
           </div>
         </div>`
       )
       .join("");
 
-    grid.querySelectorAll(".card-delete").forEach((btn) => {
+    grid.querySelectorAll(".row-delete").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -270,27 +272,27 @@
 
   // ---------- theme ----------
 
-  let theme = "dark";
+  let theme = "light";
   try {
     const saved = localStorage.getItem("nh-toolkit-theme");
     if (saved) theme = saved;
-    else if (window.matchMedia("(prefers-color-scheme: light)").matches) theme = "light";
+    else if (window.matchMedia("(prefers-color-scheme: dark)").matches) theme = "dark";
   } catch {
-    /* localStorage unavailable, keep dark default */
+    /* localStorage unavailable, keep light default */
   }
 
   function applyTheme() {
-    if (theme === "light") {
-      document.documentElement.setAttribute("data-theme", "light");
-      themeIcon.textContent = "☀";
+    if (theme === "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+      themeIcon.textContent = "☾";
     } else {
       document.documentElement.removeAttribute("data-theme");
-      themeIcon.textContent = "☾";
+      themeIcon.textContent = "☀";
     }
   }
 
   themeToggle.addEventListener("click", () => {
-    theme = theme === "light" ? "dark" : "light";
+    theme = theme === "dark" ? "light" : "dark";
     applyTheme();
     try {
       localStorage.setItem("nh-toolkit-theme", theme);

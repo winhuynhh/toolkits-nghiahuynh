@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Nghĩa Huỳnh · Toolkit</title>
 <meta name="description" content="Bộ công cụ cá nhân — mọi tool ở một nơi." />
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2226%22 fill=%22%230d0f17%22/><text x=%2250%22 y=%2264%22 font-family=%22sans-serif%22 font-weight=%22700%22 font-size=%2244%22 fill=%22%236E63F0%22 text-anchor=%22middle%22>NH</text></svg>" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2226%22 fill=%22%235B52E0%22/><text x=%2250%22 y=%2264%22 font-family=%22sans-serif%22 font-weight=%22700%22 font-size=%2244%22 fill=%22%23FFFFFF%22 text-anchor=%22middle%22>NH</text></svg>" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,31 +13,28 @@
 </head>
 <body>
 
-<div class="glow glow-a" aria-hidden="true"></div>
-<div class="glow glow-b" aria-hidden="true"></div>
-
 <header class="topbar">
   <div class="brand">
     <span class="mark" aria-hidden="true">NH</span>
     <span class="brand-text">Nghĩa Huỳnh</span>
   </div>
   <button class="theme-toggle" id="themeToggle" type="button" aria-label="Đổi giao diện sáng/tối">
-    <span id="themeIcon">☾</span>
+    <span id="themeIcon">☀</span>
   </button>
 </header>
 
-<main>
-  <section class="hero">
-    <p class="eyebrow">/ bộ công cụ cá nhân</p>
-    <h1>Mọi tool.<br>Một chỗ.<br><span class="accent">Một cú click.</span></h1>
-    <p class="hero-sub">Gõ để lọc, hoặc chọn theo nhóm. Bấm <strong>+</strong> để thêm tool mới.</p>
+<section class="hero-panel">
+  <div class="hero-inner">
+    <p class="badge-pill"><span class="badge-dot"></span>Bộ công cụ cá nhân</p>
+    <h1>Nghĩa Huỳnh <span class="accent">Toolkit</span></h1>
+    <p class="hero-sub">Tất cả tool tự build, gom về một chỗ. Bấm <strong>+</strong> để thêm tool mới.</p>
 
     <div class="command-bar">
-      <span class="prompt">/</span>
+      <span class="search-icon" aria-hidden="true">⌕</span>
       <input
         id="searchInput"
         type="text"
-        placeholder="tìm tool… (vd: flashcard, ký, yến)"
+        placeholder="Tìm tool… (vd: flashcard, ký, yến)"
         autocomplete="off"
         spellcheck="false"
       />
@@ -45,14 +42,16 @@
     </div>
 
     <div class="chips" id="categoryChips"></div>
-  </section>
+  </div>
+</section>
 
-  <section class="grid" id="toolGrid" aria-live="polite"></section>
+<main>
+  <section class="list" id="toolGrid" aria-live="polite"></section>
 
-  <div class="skeleton-grid" id="skeletonGrid">
-    <div class="skeleton-card"></div>
-    <div class="skeleton-card"></div>
-    <div class="skeleton-card"></div>
+  <div class="skeleton-list" id="skeletonGrid">
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
   </div>
 
   <div class="empty-state" id="emptyState" hidden>
