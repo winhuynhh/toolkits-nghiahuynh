@@ -1,9 +1,24 @@
 const { Redis } = require("@upstash/redis");
 
-const redis = Redis.fromEnv(); // reads UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN
+// Supports both naming conventions:
+// - UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN (manual Upstash setup)
+// - KV_REST_API_URL / KV_REST_API_TOKEN (Vercel Storage / Marketplace integration)
+const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+
+const redis =
+  REDIS_URL && REDIS_TOKEN ? new Redis({ url: REDIS_URL, token: REDIS_TOKEN }) : null;
+
 const KEY = "toolkit:tools";
 
 module.exports = async (req, res) => {
+  if (!redis) {
+    return res.status(500).json({
+      error:
+        "Thiếu cấu hình Redis. Cần set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN, hoặc KV_REST_API_URL + KV_REST_API_TOKEN trong Environment Variables.",
+    });
+  }
+
   try {
     if (req.method === "GET") {
       const all = await redis.hgetall(KEY);
