@@ -3,22 +3,23 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LP · Toolkit</title>
+<title>Nghĩa Huỳnh · Toolkit</title>
 <meta name="description" content="Bộ công cụ cá nhân — mọi tool ở một nơi." />
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2226%22 fill=%22%23151620%22/><text x=%2250%22 y=%2264%22 font-family=%22sans-serif%22 font-weight=%22700%22 font-size=%2244%22 fill=%22%23D6432E%22 text-anchor=%22middle%22>LP</text></svg>" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2226%22 fill=%22%230d0f17%22/><text x=%2250%22 y=%2264%22 font-family=%22sans-serif%22 font-weight=%22700%22 font-size=%2244%22 fill=%22%236E63F0%22 text-anchor=%22middle%22>NH</text></svg>" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<div class="grain" aria-hidden="true"></div>
+<div class="glow glow-a" aria-hidden="true"></div>
+<div class="glow glow-b" aria-hidden="true"></div>
 
 <header class="topbar">
   <div class="brand">
-    <span class="mark" aria-hidden="true">LP</span>
-    <span class="brand-text">Toolkit</span>
+    <span class="mark" aria-hidden="true">NH</span>
+    <span class="brand-text">Nghĩa Huỳnh</span>
   </div>
   <button class="theme-toggle" id="themeToggle" type="button" aria-label="Đổi giao diện sáng/tối">
     <span id="themeIcon">☾</span>
@@ -29,14 +30,14 @@
   <section class="hero">
     <p class="eyebrow">/ bộ công cụ cá nhân</p>
     <h1>Mọi tool.<br>Một chỗ.<br><span class="accent">Một cú click.</span></h1>
-    <p class="hero-sub">Gõ để lọc, hoặc chọn theo nhóm bên dưới.</p>
+    <p class="hero-sub">Gõ để lọc, hoặc chọn theo nhóm. Bấm <strong>+</strong> để thêm tool mới.</p>
 
     <div class="command-bar">
       <span class="prompt">/</span>
       <input
         id="searchInput"
         type="text"
-        placeholder="tìm tool… (vd: yến, flashcard, ký)"
+        placeholder="tìm tool… (vd: flashcard, ký, yến)"
         autocomplete="off"
         spellcheck="false"
       />
@@ -46,19 +47,79 @@
     <div class="chips" id="categoryChips"></div>
   </section>
 
-  <section class="grid" id="toolGrid"></section>
+  <section class="grid" id="toolGrid" aria-live="polite"></section>
 
-  <p class="empty-state" id="emptyState" hidden>
-    Không tìm thấy tool nào khớp — thử từ khoá khác, hoặc
-    <button type="button" id="clearFilters">bỏ lọc</button>.
+  <div class="skeleton-grid" id="skeletonGrid">
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+  </div>
+
+  <div class="empty-state" id="emptyState" hidden>
+    <p id="emptyTitle">Chưa có tool nào</p>
+    <p class="empty-sub" id="emptySub">Bấm nút <strong>+</strong> ở góc dưới để thêm tool đầu tiên.</p>
+    <button type="button" id="clearFilters" hidden>Bỏ lọc</button>
+  </div>
+
+  <p class="load-error" id="loadError" hidden>
+    Không tải được danh sách tool. <button type="button" id="retryLoad">Thử lại</button>
   </p>
 </main>
 
 <footer>
-  <span>LP Toolkit — cập nhật bằng cách sửa <code>tools-config.js</code></span>
+  <span id="footerCount"></span>
 </footer>
 
-<script src="tools-config.js"></script>
+<button class="fab" id="fabAdd" type="button" aria-label="Thêm tool mới">+</button>
+
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <h2 id="modalTitle">Thêm tool mới</h2>
+      <button type="button" class="modal-close" id="modalClose" aria-label="Đóng">✕</button>
+    </div>
+
+    <form id="toolForm" class="tool-form">
+      <label>
+        <span>Tên tool <em>*</em></span>
+        <input type="text" name="name" required maxlength="80" placeholder="VD: Flashcard Việt–Anh" />
+      </label>
+
+      <label>
+        <span>Link <em>*</em></span>
+        <input type="url" name="url" required maxlength="500" placeholder="https://..." />
+      </label>
+
+      <div class="form-row">
+        <label>
+          <span>Icon</span>
+          <input type="text" name="icon" maxlength="300" placeholder="📇 hoặc link ảnh" />
+        </label>
+        <label>
+          <span>Nhóm</span>
+          <input type="text" name="category" maxlength="40" placeholder="VD: Học tập" />
+        </label>
+      </div>
+
+      <label>
+        <span>Mô tả ngắn</span>
+        <input type="text" name="description" maxlength="200" placeholder="1 dòng mô tả tool làm gì" />
+      </label>
+
+      <label>
+        <span>Mật khẩu quản trị <em>*</em></span>
+        <input type="password" name="password" required autocomplete="off" placeholder="••••••••" />
+      </label>
+
+      <p class="form-error" id="formError" hidden></p>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" id="submitBtn">Thêm tool</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="script.js"></script>
 </body>
 </html>

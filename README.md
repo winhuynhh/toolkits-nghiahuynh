@@ -1,45 +1,49 @@
-# LP Toolkit
+# Nghĩa Huỳnh · Toolkit
 
-Trang portal gộp tất cả tools cá nhân vào 1 nơi. Card hiện tự động từ `tools-config.js` — không cần đụng vào HTML/CSS để thêm tool mới.
+Portal gộp tool cá nhân. Danh sách tool lưu trên **Upstash Redis** qua 1 API serverless (`/api/tools.js`) — thêm/xoá từ máy nào cũng đồng bộ ngay, không cần sửa code.
 
 ## Cấu trúc
 ```
 index.html        → khung trang
 style.css          → giao diện
-script.js          → logic render, search, filter, theme
-tools-config.js    → 👉 FILE DUY NHẤT CẦN SỬA để thêm/xoá/sửa tool
+script.js          → gọi API, render, form thêm/xoá, theme
+api/tools.js       → serverless function: GET / POST / DELETE
+package.json       → khai báo thư viện @upstash/redis
 ```
 
-## Thêm 1 tool mới
-Mở `tools-config.js`, copy 1 block trong mảng `TOOLS`, sửa lại:
+## Bước 1 — Tạo Upstash Redis (miễn phí)
+1. Vào https://console.upstash.com → đăng nhập (Google/GitHub được).
+2. **Create Database** → đặt tên tuỳ ý → chọn Region gần bạn nhất (vd `ap-southeast-1` Singapore) → Create.
+3. Vào database vừa tạo → tab **REST API** → copy 2 giá trị:
+   - `UPSTASH_REDIS_REST_URL`
+   - `UPSTASH_REDIS_REST_TOKEN`
 
-```js
-{
-  name: "Tên tool",
-  url: "https://your-tool.vercel.app",
-  icon: "🔧",              // emoji hoặc link ảnh https://...png
-  description: "Mô tả ngắn 1 dòng.",
-  category: "Học tập",     // dùng để lọc theo nhóm, tự tạo nhóm mới thoải mái
-},
-```
+## Bước 2 — Deploy lên Vercel
 
-Lưu file, reload trang — card mới xuất hiện ngay, không cần build gì thêm.
+**Khuyên dùng cách GitHub** (vì project giờ có API + package.json, deploy qua Git ổn định hơn kéo-thả):
 
-## Deploy lên Vercel (chỉ cần trình duyệt)
+1. Tạo repo mới trên GitHub → **Add file → Upload files** → kéo hết các file/folder trong project này lên (giữ nguyên cấu trúc, đặc biệt là thư mục `api/`), Commit.
+2. Vào https://vercel.com/new → **Import Git Repository** → chọn repo vừa tạo.
+3. Framework Preset: để **Other** (Vercel tự nhận `api/tools.js` là serverless function, tự chạy `npm install` cho `package.json`).
+4. **Trước khi bấm Deploy**, mở phần **Environment Variables**, thêm 3 biến:
 
-**Cách 1 — kéo thả (nhanh nhất, không cần GitHub):**
-1. Vào https://vercel.com/new, đăng nhập.
-2. Chọn "Deploy" → kéo cả thư mục này vào ô upload (hoặc dùng "Browse").
-3. Vercel tự nhận đây là static site, bấm Deploy. Xong, có link dạng `xxx.vercel.app`.
+   | Name | Value |
+   |---|---|
+   | `UPSTASH_REDIS_REST_URL` | (copy từ Upstash) |
+   | `UPSTASH_REDIS_REST_TOKEN` | (copy từ Upstash) |
+   | `TOOLKIT_ADMIN_PASSWORD` | mật khẩu bạn tự đặt để bảo vệ chức năng thêm/xoá |
 
-**Cách 2 — qua GitHub (khuyên dùng nếu sẽ sửa thường xuyên):**
-1. Tạo repo mới trên GitHub, upload 5 file trong thư mục này (dùng nút "Add file → Upload files" trên GitHub, không cần Git CLI).
-2. Vào https://vercel.com/new → "Import Git Repository" → chọn repo vừa tạo.
-3. Framework Preset để "Other" — không cần build command, để trống. Output directory để trống (root).
-4. Deploy. Từ giờ mỗi lần sửa `tools-config.js` trên GitHub (Edit trực tiếp trên web), Vercel tự deploy lại.
+5. Bấm **Deploy**. Xong, có link dạng `nghiahuynh-toolkit-xxxx.vercel.app`.
 
-### Đổi sang domain phụ của laphanblog.com sau này
-Vercel → Project → Settings → Domains → Add `tools.laphanblog.com` → thêm CNAME record tương ứng ở nơi quản lý DNS của laphanblog.com (giống cách đã cấu hình QUIC.cloud trước đây, chỉ khác đích trỏ).
+> Nếu quên thêm env var lúc deploy: vào Project → **Settings → Environment Variables**, thêm sau, rồi vào tab **Deployments** → bấm **Redeploy** ở bản mới nhất để áp dụng.
 
-## Việc cần làm tiếp
-Trong `tools-config.js`, 3 tool mẫu đang có URL placeholder (`REPLACE-WITH-...`) — thay bằng link thật của Flashcard, Chữ ký số, và Yến sào, hoặc xoá nếu chưa có link.
+## Sử dụng
+- Bấm nút **+** góc dưới phải → điền tên, link, icon (emoji hoặc URL ảnh), mô tả, nhóm, và **mật khẩu quản trị** (`TOOLKIT_ADMIN_PASSWORD` đã đặt ở trên) → Thêm tool.
+- Hover vào card → bấm ✕ để xoá, cũng cần nhập mật khẩu.
+- Ai vào xem portal cũng được (không cần mật khẩu), chỉ thêm/xoá mới cần.
+
+## Đổi mật khẩu quản trị sau này
+Vào Vercel → Settings → Environment Variables → sửa `TOOLKIT_ADMIN_PASSWORD` → Redeploy.
+
+## Đổi tên miền
+Project → Settings → Domains → Add domain bạn có → trỏ DNS theo hướng dẫn Vercel hiện ra.
