@@ -524,6 +524,12 @@ footer {
 .btn-primary:hover { transform: translateY(-1px); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
+/* CSS specificity fix: elements with explicit `display` in their class rule
+   (e.g. .grid, .skeleton-grid, .modal-overlay) would otherwise override the
+   [hidden] attribute, since author rules beat the UA [hidden] rule regardless
+   of specificity. This forces hidden to always win. */
+[hidden] { display: none !important; }
+
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 @media (max-width: 480px) {
