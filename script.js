@@ -78,11 +78,39 @@
     }
   }
 
-  function iconMarkup(icon) {
-    if (/^https?:\/\//.test(icon || "")) {
-      return `<img src="${icon}" alt="" loading="lazy" />`;
+  function hashStr(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) {
+      h = (h * 31 + str.charCodeAt(i)) >>> 0;
     }
-    return icon || "🔧";
+    return h;
+  }
+
+  const AVATAR_PALETTE = [
+    ["#6E63F0", "#33C9C1"],
+    ["#F0637A", "#F0B84C"],
+    ["#4C7AF0", "#33D0F0"],
+    ["#9B5DE5", "#F15BB5"],
+    ["#2FBF71", "#8CE99A"],
+    ["#F0973C", "#F0637A"],
+  ];
+
+  function avatarStyle(seed) {
+    const pair = AVATAR_PALETTE[hashStr(seed) % AVATAR_PALETTE.length];
+    return `background:linear-gradient(145deg, ${pair[0]}, ${pair[1]});`;
+  }
+
+  function iconMarkup(icon, name) {
+    if (/^https?:\/\//.test(icon || "")) {
+      return { style: "", html: `<img src="${escapeAttr(icon)}" alt="" loading="lazy" />` };
+    }
+    const label = (icon && icon.trim()) || name || "?";
+    const len = label.length;
+    const fontSize = len <= 3 ? 17 : len <= 5 ? 14 : len <= 7 ? 12 : 10;
+    return {
+      style: avatarStyle(name || label),
+      html: `<span class="row-icon-label" style="font-size:${fontSize}px">${escapeHtml(label)}</span>`,
+    };
   }
 
   function buildChips() {
@@ -119,7 +147,7 @@
         (t, i) => `
         <div class="row-card" style="animation-delay:${i * 25}ms">
           <a class="row-link" href="${escapeAttr(t.url)}" target="_blank" rel="noopener noreferrer" aria-label="Mở ${escapeAttr(t.name)}"></a>
-          <div class="row-icon">${iconMarkup(t.icon)}</div>
+          <div class="row-icon" style="${iconMarkup(t.icon, t.name).style}">${iconMarkup(t.icon, t.name).html}</div>
           <div class="row-content">
             <div class="row-head">
               <h3 class="row-name">${escapeHtml(t.name)}</h3>
