@@ -106,7 +106,7 @@
     }
     const label = (icon && icon.trim()) || name || "?";
     const len = label.length;
-    const fontSize = len <= 3 ? 17 : len <= 5 ? 14 : len <= 7 ? 12 : 10;
+    const fontSize = len <= 3 ? 17 : len <= 5 ? 14 : len <= 7 ? 12 : len <= 9 ? 10 : 9;
     return {
       style: avatarStyle(name || label),
       html: `<span class="row-icon-label" style="font-size:${fontSize}px">${escapeHtml(label)}</span>`,

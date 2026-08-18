@@ -290,13 +290,16 @@ main {
   font-weight: 700;
   text-align: center;
   line-height: 1.1;
-  padding: 3px;
+  padding: 0 2px;
   width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .row-content { flex: 1; min-width: 0; position: relative; }
