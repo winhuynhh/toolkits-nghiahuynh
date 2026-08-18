@@ -14,17 +14,32 @@
   const themeIcon = document.getElementById("themeIcon");
   const footerCount = document.getElementById("footerCount");
 
+  const editToggle = document.getElementById("editToggle");
+  const editToggleIcon = document.getElementById("editToggleIcon");
+  const editToggleLabel = document.getElementById("editToggleLabel");
+
   const fabAdd = document.getElementById("fabAdd");
   const modalOverlay = document.getElementById("modalOverlay");
+  const modalTitle = document.getElementById("modalTitle");
   const modalClose = document.getElementById("modalClose");
   const toolForm = document.getElementById("toolForm");
   const formError = document.getElementById("formError");
   const submitBtn = document.getElementById("submitBtn");
 
+  const passwordOverlay = document.getElementById("passwordOverlay");
+  const passwordClose = document.getElementById("passwordClose");
+  const passwordForm = document.getElementById("passwordForm");
+  const passwordError = document.getElementById("passwordError");
+  const passwordSubmitBtn = document.getElementById("passwordSubmitBtn");
+
   let allTools = [];
   let activeCategory = "Tất cả";
   let query = "";
   let loading = true;
+
+  let editMode = false;
+  let adminPassword = null;
+  let editingId = null; // null = adding a new tool, otherwise editing this id
 
   // ---------- data ----------
 
@@ -109,7 +124,12 @@
             <div class="row-head">
               <h3 class="row-name">${escapeHtml(t.name)}</h3>
               <div class="row-actions">
-                <button class="row-delete" data-id="${escapeAttr(t.id)}" type="button" title="Xoá tool" aria-label="Xoá ${escapeAttr(t.name)}">✕</button>
+                ${
+                  editMode
+                    ? `<button class="row-edit" data-id="${escapeAttr(t.id)}" type="button" title="Sửa tool" aria-label="Sửa ${escapeAttr(t.name)}">✎</button>
+                       <button class="row-delete" data-id="${escapeAttr(t.id)}" type="button" title="Xoá tool" aria-label="Xoá ${escapeAttr(t.name)}">✕</button>`
+                    : ""
+                }
                 <span class="row-arrow">→</span>
               </div>
             </div>
@@ -123,13 +143,23 @@
       )
       .join("");
 
-    grid.querySelectorAll(".row-delete").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        handleDelete(btn.dataset.id);
+    if (editMode) {
+      grid.querySelectorAll(".row-edit").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const tool = allTools.find((t) => t.id === btn.dataset.id);
+          if (tool) openToolModal(tool);
+        });
       });
-    });
+      grid.querySelectorAll(".row-delete").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleDelete(btn.dataset.id);
+        });
+      });
+    }
 
     const hasAny = allTools.length > 0;
     const hasFiltered = filtered.length > 0;
@@ -143,7 +173,9 @@
     if (!hasFiltered) {
       if (!hasAny) {
         emptyTitle.textContent = "Chưa có tool nào";
-        emptySub.innerHTML = 'Bấm nút <strong>+</strong> ở góc dưới để thêm tool đầu tiên.';
+        emptySub.innerHTML = editMode
+          ? 'Bấm nút <strong>+</strong> ở góc dưới để thêm tool đầu tiên.'
+          : 'Bấm <strong>Sửa</strong> ở góc trên để thêm tool đầu tiên.';
         clearFiltersBtn.hidden = true;
       } else {
         emptyTitle.textContent = "Không tìm thấy tool nào khớp";
@@ -173,6 +205,81 @@
     return escapeHtml(str);
   }
 
+  // ---------- edit mode (unlock via password) ----------
+
+  function updateEditUI() {
+    fabAdd.hidden = !editMode;
+    editToggle.classList.toggle("active", editMode);
+    editToggleIcon.textContent = editMode ? "✓" : "✎";
+    editToggleLabel.textContent = editMode ? "Xong" : "Sửa";
+    render();
+  }
+
+  editToggle.addEventListener("click", () => {
+    if (editMode) {
+      editMode = false;
+      adminPassword = null;
+      updateEditUI();
+    } else {
+      openPasswordModal();
+    }
+  });
+
+  function openPasswordModal() {
+    passwordError.hidden = true;
+    passwordForm.reset();
+    passwordOverlay.hidden = false;
+    document.body.style.overflow = "hidden";
+    setTimeout(() => passwordForm.elements.password.focus(), 50);
+  }
+
+  function closePasswordModal() {
+    passwordOverlay.hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  passwordClose.addEventListener("click", closePasswordModal);
+  passwordOverlay.addEventListener("click", (e) => {
+    if (e.target === passwordOverlay) closePasswordModal();
+  });
+
+  passwordForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    passwordError.hidden = true;
+
+    const fd = new FormData(passwordForm);
+    const password = fd.get("password");
+
+    passwordSubmitBtn.disabled = true;
+    passwordSubmitBtn.textContent = "Đang kiểm tra…";
+
+    try {
+      const res = await fetch("/api/tools", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify", password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        passwordError.textContent = data.error || "Sai mật khẩu.";
+        passwordError.hidden = false;
+        return;
+      }
+
+      adminPassword = password;
+      editMode = true;
+      closePasswordModal();
+      updateEditUI();
+    } catch {
+      passwordError.textContent = "Lỗi kết nối, thử lại sau.";
+      passwordError.hidden = false;
+    } finally {
+      passwordSubmitBtn.disabled = false;
+      passwordSubmitBtn.textContent = "Mở khoá";
+    }
+  });
+
   // ---------- delete ----------
 
   async function handleDelete(id) {
@@ -180,14 +287,11 @@
     const label = tool ? tool.name : "tool này";
     if (!window.confirm(`Xoá "${label}" khỏi Toolkit?`)) return;
 
-    const password = window.prompt("Nhập mật khẩu quản trị để xoá:");
-    if (password === null) return;
-
     try {
       const res = await fetch("/api/tools", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, password }),
+        body: JSON.stringify({ id, password: adminPassword }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -202,33 +306,54 @@
     }
   }
 
-  // ---------- add-tool modal ----------
+  // ---------- add / edit tool modal ----------
 
-  function openModal() {
-    modalOverlay.hidden = false;
+  function openToolModal(tool) {
+    editingId = tool ? tool.id : null;
+    modalTitle.textContent = tool ? "Sửa tool" : "Thêm tool mới";
+    submitBtn.textContent = tool ? "Lưu thay đổi" : "Thêm tool";
     formError.hidden = true;
     toolForm.reset();
+
+    if (tool) {
+      toolForm.elements.name.value = tool.name || "";
+      toolForm.elements.url.value = tool.url || "";
+      toolForm.elements.icon.value = tool.icon || "";
+      toolForm.elements.category.value = tool.category || "";
+      toolForm.elements.description.value = tool.description || "";
+    }
+
+    modalOverlay.hidden = false;
     document.body.style.overflow = "hidden";
     setTimeout(() => toolForm.elements.name.focus(), 50);
   }
 
-  function closeModal() {
+  function closeToolModal() {
     modalOverlay.hidden = true;
     document.body.style.overflow = "";
+    editingId = null;
   }
 
-  fabAdd.addEventListener("click", openModal);
-  modalClose.addEventListener("click", closeModal);
+  fabAdd.addEventListener("click", () => openToolModal(null));
+  modalClose.addEventListener("click", closeToolModal);
   modalOverlay.addEventListener("click", (e) => {
-    if (e.target === modalOverlay) closeModal();
+    if (e.target === modalOverlay) closeToolModal();
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !modalOverlay.hidden) closeModal();
+    if (e.key !== "Escape") return;
+    if (!modalOverlay.hidden) closeToolModal();
+    if (!passwordOverlay.hidden) closePasswordModal();
   });
 
   toolForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     formError.hidden = true;
+
+    if (!adminPassword) {
+      formError.textContent = "Phiên chỉnh sửa đã hết hạn, bấm Sửa lại để mở khoá.";
+      formError.hidden = false;
+      return;
+    }
 
     const fd = new FormData(toolForm);
     const payload = {
@@ -237,15 +362,18 @@
       icon: fd.get("icon")?.trim(),
       category: fd.get("category")?.trim(),
       description: fd.get("description")?.trim(),
-      password: fd.get("password"),
+      password: adminPassword,
     };
 
+    const isEditing = Boolean(editingId);
+    if (isEditing) payload.id = editingId;
+
     submitBtn.disabled = true;
-    submitBtn.textContent = "Đang thêm…";
+    submitBtn.textContent = isEditing ? "Đang lưu…" : "Đang thêm…";
 
     try {
       const res = await fetch("/api/tools", {
-        method: "POST",
+        method: isEditing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -257,16 +385,20 @@
         return;
       }
 
-      allTools.push(data.tool);
+      if (isEditing) {
+        allTools = allTools.map((t) => (t.id === data.tool.id ? data.tool : t));
+      } else {
+        allTools.push(data.tool);
+      }
       buildChips();
       render();
-      closeModal();
+      closeToolModal();
     } catch {
       formError.textContent = "Lỗi kết nối, thử lại sau.";
       formError.hidden = false;
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = "Thêm tool";
+      submitBtn.textContent = isEditing ? "Lưu thay đổi" : "Thêm tool";
     }
   });
 
@@ -302,5 +434,6 @@
   });
 
   applyTheme();
+  updateEditUI();
   loadTools();
 })();
